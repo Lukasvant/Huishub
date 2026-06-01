@@ -1,0 +1,59 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "public": "out",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "cleanUrls": true,
+    "headers": [
+      {
+        "source": "/sw.js",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      },
+      {
+        "source": "/",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store" }]
+      },
+      {
+        "source": "/login",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store" }]
+      },
+      {
+        "source": "/onboarding/**",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store" }]
+      },
+      {
+        "source": "/dashboard",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store" }]
+      },
+      {
+        "source": "/tasks",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store" }]
+      },
+      {
+        "source": "/groceries",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store" }]
+      },
+      {
+        "source": "/agenda",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store" }]
+      },
+      {
+        "source": "/settings/**",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store" }]
+      },
+      {
+        "source": "/offline",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store" }]
+      }
+    ]
+  },
+  "emulators": {
+    "auth": { "port": 9099 },
+    "firestore": { "port": 8080 },
+    "hosting": { "port": 5000 },
+    "ui": { "enabled": true }
+  }
+}
