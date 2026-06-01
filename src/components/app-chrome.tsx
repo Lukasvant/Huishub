@@ -37,12 +37,12 @@ function NavItem({
       className={clsx(
         "flex items-center transition",
         mobile
-          ? "min-w-0 flex-1 flex-col gap-1 py-2 text-[11px]"
-          : "gap-3 rounded-xl px-3 py-3 text-sm",
+          ? "min-w-0 flex-1 flex-col gap-1 py-2 text-[10px] uppercase tracking-[0.08em]"
+          : "gap-3 rounded-full px-3 py-3 text-xs font-semibold uppercase tracking-[0.12em]",
         active
           ? mobile
             ? "text-sage-600"
-            : "bg-sage-50 font-medium text-sage-600"
+            : "bg-sage-50 text-sage-600"
           : "text-muted hover:text-ink",
       )}
     >
@@ -64,9 +64,11 @@ export function AppChrome({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen md:flex">
-      <aside className="hidden w-64 shrink-0 border-r border-stone-200 bg-white px-4 py-6 md:flex md:flex-col">
+      <aside className="hidden w-64 shrink-0 border-r border-line bg-canvas px-4 py-6 md:flex md:flex-col">
         <Link href="/dashboard" className="mb-8 px-3">
-          <p className="text-xl font-semibold tracking-tight">HuisHub</p>
+          <p className="font-serif text-3xl italic leading-none">
+            Huis<span className="not-italic text-sage-500">Hub</span>.
+          </p>
           <p className="mt-1 truncate text-sm text-muted">{household?.name}</p>
         </Link>
         <nav className="space-y-1">
@@ -74,8 +76,10 @@ export function AppChrome({ children }: { children: ReactNode }) {
             <NavItem key={link.href} {...link} />
           ))}
         </nav>
-        <div className="mt-auto border-t border-stone-100 px-3 pt-4">
-          <p className="text-xs text-muted">{role}</p>
+        <div className="mt-auto border-t border-line px-3 pt-4">
+          <p className="text-xs uppercase tracking-[0.14em] text-muted">
+            {role}
+          </p>
           <Button
             variant="ghost"
             className="mt-2 w-full justify-start px-0"
@@ -90,7 +94,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
           {children}
         </div>
       </div>
-      <nav className="fixed inset-x-0 bottom-0 z-20 flex border-t border-stone-200 bg-white/95 px-2 backdrop-blur md:hidden">
+      <nav className="fixed inset-x-0 bottom-0 z-20 flex border-t border-line bg-canvas/95 px-2 backdrop-blur md:hidden">
         {links.map((link) => (
           <NavItem key={link.href} {...link} mobile />
         ))}

@@ -12,12 +12,13 @@ export function Button({
   return (
     <button
       className={clsx(
-        "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition",
-        variant === "primary" && "bg-sage-500 text-white hover:bg-sage-600",
+        "inline-flex min-h-11 items-center justify-center gap-2 rounded-full px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.12em] transition",
+        variant === "primary" &&
+          "border border-sage-500 bg-sage-100 text-ink hover:bg-sage-500 hover:text-white",
         variant === "secondary" &&
-          "border border-stone-200 bg-white text-ink hover:bg-stone-50",
+          "border border-line bg-transparent text-ink hover:border-sage-500 hover:bg-sage-50",
         variant === "danger" && "bg-red-50 text-red-700 hover:bg-red-100",
-        variant === "ghost" && "text-muted hover:bg-stone-100 hover:text-ink",
+        variant === "ghost" && "text-muted hover:bg-sage-50 hover:text-ink",
         className,
       )}
       {...props}
@@ -35,7 +36,7 @@ export function Card({
   return (
     <div
       className={clsx(
-        "rounded-2xl border border-stone-100 bg-panel p-4 shadow-calm",
+        "rounded-[1.75rem] border border-line bg-panel p-4 shadow-calm",
         className,
       )}
       {...props}
@@ -55,11 +56,14 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <header className="mb-5 flex items-start justify-between gap-4">
+    <header className="mb-6 flex items-start justify-between gap-4 border-b border-line pb-5">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+        <p className="eyebrow">HuisHub</p>
+        <h1 className="mt-1 text-4xl leading-none sm:text-5xl">{title}</h1>
         {description && (
-          <p className="mt-1 text-sm text-muted">{description}</p>
+          <p className="mt-2 max-w-xl text-sm uppercase tracking-[0.12em] text-muted">
+            {description}
+          </p>
         )}
       </div>
       {action}
@@ -69,8 +73,8 @@ export function PageHeader({
 
 export function EmptyState({ title, text }: { title: string; text: string }) {
   return (
-    <div className="rounded-2xl border border-dashed border-stone-200 px-5 py-9 text-center">
-      <p className="font-medium">{title}</p>
+    <div className="rounded-[1.75rem] border border-dashed border-line px-5 py-9 text-center">
+      <p className="font-serif text-2xl font-medium">{title}</p>
       <p className="mt-1 text-sm text-muted">{text}</p>
     </div>
   );

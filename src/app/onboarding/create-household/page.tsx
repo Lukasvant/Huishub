@@ -39,9 +39,9 @@ export default function CreateHouseholdPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md items-center px-5">
       <Card className="w-full p-6">
-        <p className="text-sm font-medium text-sage-600">Welkom bij HuisHub</p>
-        <h1 className="mt-2 text-2xl font-semibold">Maak je huishouden</h1>
-        <p className="mt-2 text-sm text-muted">
+        <p className="eyebrow">Welkom bij HuisHub</p>
+        <h1 className="mt-2 text-4xl leading-none">Maak je huishouden</h1>
+        <p className="mt-3 text-sm uppercase tracking-[0.12em] text-muted">
           Daarna kun je je partner en meekijkers uitnodigen.
         </p>
         <form className="mt-6 space-y-4" onSubmit={submit}>

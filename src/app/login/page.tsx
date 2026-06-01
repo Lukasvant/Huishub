@@ -47,14 +47,17 @@ export default function LoginPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md items-center px-5 py-8">
       <div className="w-full">
-        <div className="mb-7 text-center">
-          <h1 className="text-3xl font-semibold tracking-tight">HuisHub</h1>
-          <p className="mt-2 text-muted">
+        <div className="mb-8 text-center">
+          <p className="eyebrow">Welkom bij</p>
+          <h1 className="mt-2 font-serif text-6xl italic leading-none">
+            Huis<span className="not-italic text-sage-500">Hub</span>.
+          </h1>
+          <p className="mt-3 text-sm uppercase tracking-[0.14em] text-muted">
             Samen overzicht in huis, zonder gedoe.
           </p>
         </div>
         <Card className="p-5 sm:p-6">
-          <h2 className="text-lg font-semibold">
+          <h2 className="text-3xl leading-none">
             {newAccount ? "Account maken" : "Inloggen"}
           </h2>
           <form className="mt-5 space-y-4" onSubmit={submit}>
@@ -130,7 +133,7 @@ export default function LoginPage() {
             Doorgaan met Google
           </Button>
           <button
-            className="mt-5 w-full text-sm text-sage-600"
+            className="mt-5 w-full text-sm font-semibold text-sage-600"
             onClick={() => {
               clearError();
               setNewAccount((current) => !current);

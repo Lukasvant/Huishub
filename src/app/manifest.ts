@@ -9,8 +9,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Gedeelde taken, boodschappen en agenda.",
     start_url: "/dashboard",
     display: "standalone",
-    background_color: "#f6f6f3",
-    theme_color: "#51755c",
+    background_color: "#f5f1e8",
+    theme_color: "#00abc2",
     lang: "nl-NL",
     icons: [
       {
