@@ -1,6 +1,6 @@
-# HuisHub
+# TaskHive
 
-HuisHub is een rustige Nederlandse web-app/PWA voor gedeelde huishoudplanning. V1 is gericht op een betrouwbaar dagelijks gebruik door twee bewerkers, met veilige alleen-lezen toegang voor oppas of familie.
+TaskHive is een rustige Nederlandse web-app/PWA voor gedeelde huishoudplanning. V1 is gericht op een betrouwbaar dagelijks gebruik door twee bewerkers, met veilige alleen-lezen toegang voor oppas of familie.
 
 ## V1-functionaliteit
 
@@ -42,7 +42,7 @@ Supabase, native apps, chatintegraties en locatietriggers maken nadrukkelijk gee
    ```
 
 4. Log in bij de Firebase CLI. De aanwezige `.firebaserc` koppelt dit project al
-   aan `huishub-930f2`:
+   aan het bestaande Firebase-project `huishub-930f2`:
 
    ```bash
    npx firebase-tools login

@@ -67,7 +67,7 @@ export function AppChrome({ children }: { children: ReactNode }) {
       <aside className="hidden w-64 shrink-0 border-r border-line bg-canvas px-4 py-6 md:flex md:flex-col">
         <Link href="/dashboard" className="mb-8 px-3">
           <p className="font-serif text-3xl italic leading-none">
-            Huis<span className="not-italic text-sage-500">Hub</span>.
+            Task<span className="not-italic text-sage-500">Hive</span>.
           </p>
           <p className="mt-1 truncate text-sm text-muted">{household?.name}</p>
         </Link>

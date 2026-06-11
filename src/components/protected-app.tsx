@@ -30,7 +30,7 @@ export function ProtectedApp({ children }: { children: ReactNode }) {
     );
   }
   if (authLoading || householdLoading || !user || !member) {
-    return <LoadingScreen text="HuisHub openen..." />;
+    return <LoadingScreen text="TaskHive openen..." />;
   }
   return (
     <AppChrome>

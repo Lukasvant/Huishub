@@ -6,15 +6,15 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "HuisHub",
-    template: "%s | HuisHub",
+    default: "TaskHive",
+    template: "%s | TaskHive",
   },
   description: "Rustige huishoudplanning voor het hele gezin.",
-  applicationName: "HuisHub",
+  applicationName: "TaskHive",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "HuisHub",
+    title: "TaskHive",
   },
 };
 

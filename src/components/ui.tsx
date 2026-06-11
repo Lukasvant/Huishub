@@ -58,7 +58,7 @@ export function PageHeader({
   return (
     <header className="mb-6 flex items-start justify-between gap-4 border-b border-line pb-5">
       <div>
-        <p className="eyebrow">HuisHub</p>
+        <p className="eyebrow">TaskHive</p>
         <h1 className="mt-1 text-4xl leading-none sm:text-5xl">{title}</h1>
         {description && (
           <p className="mt-2 max-w-xl text-sm uppercase tracking-[0.12em] text-muted">

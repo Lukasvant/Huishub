@@ -6,7 +6,7 @@ export default function OfflinePage() {
       <Card className="text-center">
         <h1 className="text-xl font-semibold">Je bent offline</h1>
         <p className="mt-2 text-sm text-muted">
-          Zodra er weer verbinding is, kun je HuisHub verder gebruiken.
+          Zodra er weer verbinding is, kun je TaskHive verder gebruiken.
         </p>
       </Card>
     </main>

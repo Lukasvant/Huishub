@@ -50,7 +50,7 @@ export default function LoginPage() {
         <div className="mb-8 text-center">
           <p className="eyebrow">Welkom bij</p>
           <h1 className="mt-2 font-serif text-6xl italic leading-none">
-            Huis<span className="not-italic text-sage-500">Hub</span>.
+            Task<span className="not-italic text-sage-500">Hive</span>.
           </h1>
           <p className="mt-3 text-sm uppercase tracking-[0.14em] text-muted">
             Samen overzicht in huis, zonder gedoe.

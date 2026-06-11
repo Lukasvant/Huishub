@@ -38,7 +38,8 @@ interface HouseholdContextValue {
 const HouseholdContext = createContext<HouseholdContextValue | undefined>(
   undefined,
 );
-const selectedKey = "huishub-selected-household";
+const selectedKey = "taskhive-selected-household";
+const legacySelectedKey = "huishub-selected-household";
 
 export function HouseholdProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -74,7 +75,8 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
             setHouseholds(memberships);
             const saved =
               typeof window !== "undefined"
-                ? localStorage.getItem(selectedKey)
+                ? (localStorage.getItem(selectedKey) ??
+                  localStorage.getItem(legacySelectedKey))
                 : undefined;
             const preferred = memberships.find(
               (membership) => membership.householdId === saved,
@@ -117,6 +119,7 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
 
   const selectHousehold = useCallback((householdId: string) => {
     localStorage.setItem(selectedKey, householdId);
+    localStorage.removeItem(legacySelectedKey);
     setSelectedId(householdId);
   }, []);
 
