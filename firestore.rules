@@ -77,9 +77,8 @@ service cloud.firestore {
           (signedIn() &&
             resource.data.status == 'pending' &&
             resource.data.email == request.auth.token.email &&
-            request.resource.data.email == resource.data.email &&
-            request.resource.data.role == resource.data.role &&
-            request.resource.data.createdBy == resource.data.createdBy &&
+            request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'acceptedBy', 'updatedAt']) &&
             request.resource.data.status == 'accepted' &&
             request.resource.data.acceptedBy == request.auth.uid);
       }

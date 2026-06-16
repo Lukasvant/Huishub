@@ -107,6 +107,14 @@ npm run build
 
 Tests dekken de Nederlandse parser, herhalingsberekening, rol/privacyhelpers en de belangrijkste componentflows voor boodschappen, taken en privé-agenda.
 
+Firestore security rules hebben een aparte emulator-test:
+
+```bash
+npm run test:rules
+```
+
+Deze test start de Firestore Emulator en vereist lokaal Java. Zonder Java stopt de Firebase CLI met de melding dat `java -version` niet beschikbaar is.
+
 ## Roadmap na V1
 
 - Foto-upload van de papieren agenda met Firebase Storage en OCR-review na menselijke bevestiging.
