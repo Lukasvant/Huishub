@@ -84,10 +84,18 @@ households/{householdId}
   tasks/{taskId}
   groceryItems/{groceryItemId}
   agendaItems/{agendaItemId}
+  calendarConnections/{userId}
+  datePolls/{datePollId}
+    responses/{responseId}
   notifications/{notificationId}
+publicDatePolls/{publicId}
+  responses/{responseId}
+publicDatePollOwners/{publicId}
 ```
 
-De interfaces staan in `src/types/models.ts`. Documenten bevatten `createdAt` en `updatedAt` waar van toepassing. Agenda-items schrijven altijd `visibleToViewers = !private`; security rules controleren die invariant.
+De interfaces staan in `src/types/models.ts`. Documenten bevatten `createdAt` en `updatedAt` waar van toepassing. Agenda-items schrijven altijd `visibleToViewers = !private`; security rules controleren die invariant. Publieke datumprikker-documenten bevatten alleen deelbare velden; de interne eigenaar-koppeling staat apart in `publicDatePollOwners`.
+
+De geplande Google Agenda-koppeling en publieke datumprikker staan uitgewerkt in `docs/google-calendar-date-polls.md`. De beschikbaarheidslogica leeft provider-onafhankelijk in `src/lib/agenda/date-poll-planner.ts`, zodat Google Freebusy later alleen bezette blokken hoeft aan te leveren.
 
 ## Spraak
 
@@ -118,6 +126,7 @@ Deze test start de Firestore Emulator en vereist lokaal Java. Zonder Java stopt 
 ## Roadmap na V1
 
 - Foto-upload van de papieren agenda met Firebase Storage en OCR-review na menselijke bevestiging.
+- Google Agenda-koppeling met Datumprikker-links voor vrienden en vriendengroepen.
 - Browser pushmeldingen bovenop de huidige in-appmeldingen.
 - WhatsApp/Signal verzenden, lezen en boodschappen toevoegen via berichten.
 - Locatieherinneringen nabij winkels, bijvoorbeeld AH.

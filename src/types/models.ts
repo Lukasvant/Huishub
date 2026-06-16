@@ -115,6 +115,65 @@ export interface AgendaItem {
   updatedAt: StoredDate;
 }
 
+export interface CalendarConnection {
+  id: string;
+  householdId: string;
+  userId: string;
+  provider: "google";
+  status: "connected" | "needs_reconnect";
+  calendarId: "primary" | string;
+  scopes: string[];
+  connectedAt: StoredDate;
+  updatedAt: StoredDate;
+}
+
+export interface DatePollSlot {
+  id: string;
+  startDateTime: StoredDate;
+  endDateTime: StoredDate;
+}
+
+export interface DatePoll {
+  id: string;
+  householdId: string;
+  title: string;
+  description?: string;
+  location?: string;
+  createdBy: string;
+  status: "draft" | "open" | "closed" | "scheduled";
+  publicId: string;
+  durationMinutes: number;
+  timeZone: "Europe/Amsterdam" | string;
+  rangeStart: StoredDate;
+  rangeEnd: StoredDate;
+  candidateSlots: DatePollSlot[];
+  selectedSlotId?: string;
+  selectedAgendaItemId?: string;
+  createdAt: StoredDate;
+  updatedAt: StoredDate;
+}
+
+export type DatePollChoice = "yes" | "maybe" | "no";
+
+export interface DatePollResponse {
+  id: string;
+  name: string;
+  email?: string;
+  choices: Record<string, DatePollChoice>;
+  createdAt: StoredDate;
+  updatedAt: StoredDate;
+}
+
+export interface PublicDatePoll {
+  id: string;
+  title: string;
+  description?: string;
+  location?: string;
+  status: "open" | "closed" | "scheduled";
+  candidateSlots: DatePollSlot[];
+  expiresAt: StoredDate;
+}
+
 export type NotificationType =
   | "task_due_soon"
   | "task_overdue"

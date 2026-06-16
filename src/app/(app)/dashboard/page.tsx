@@ -2,6 +2,7 @@
 
 import {
   CalendarPlus,
+  Check,
   CheckSquare,
   Mic,
   Plus,
@@ -9,6 +10,7 @@ import {
 } from "lucide-react";
 import { isAfter, isSameDay, startOfDay } from "date-fns";
 import Link from "next/link";
+import { useState } from "react";
 import {
   Button,
   Card,
@@ -24,12 +26,16 @@ import {
   useTasks,
 } from "@/hooks/use-household-data";
 import { asDate, formatDay, formatTime } from "@/lib/date";
+import { toggleTaskDone } from "@/lib/firebase/data";
 import { buildInAppNotifications } from "@/lib/notifications";
 import { canEdit } from "@/lib/permissions";
 import { isTaskDueSoon } from "@/lib/tasks/recurrence";
+import type { Task } from "@/types/models";
 
 export default function DashboardPage() {
   const { household, member } = useHousehold();
+  const [dashboardError, setDashboardError] = useState<string>();
+  const [completingTaskId, setCompletingTaskId] = useState<string>();
   const {
     items: tasks,
     loading: tasksLoading,
@@ -68,7 +74,20 @@ export default function DashboardPage() {
   );
   const needed = groceries.filter((item) => item.status === "needed");
   const notifications = buildInAppNotifications(tasks, agenda, now).slice(0, 4);
-  const error = taskError ?? groceryError ?? agendaError;
+  const error = taskError ?? groceryError ?? agendaError ?? dashboardError;
+
+  async function completeTask(task: Task) {
+    if (!household?.id || !editable) return;
+    setCompletingTaskId(task.id);
+    setDashboardError(undefined);
+    try {
+      await toggleTaskDone(household.id, task);
+    } catch {
+      setDashboardError("De taak kon niet worden afgevinkt.");
+    } finally {
+      setCompletingTaskId(undefined);
+    }
+  }
 
   if (tasksLoading || groceriesLoading || agendaLoading) {
     return <LoadingScreen text="Overzicht laden..." />;
@@ -142,13 +161,26 @@ export default function DashboardPage() {
           ) : (
             <ul className="space-y-2">
               {openTasks.map((task) => (
-                <li className="text-sm" key={task.id}>
-                  <p className="font-medium">{task.title}</p>
-                  {asDate(task.dueDate) && (
-                    <p className="text-muted">
-                      {formatDay(asDate(task.dueDate)!)}
-                    </p>
+                <li className="flex items-start gap-2 text-sm" key={task.id}>
+                  {editable && (
+                    <button
+                      aria-label={`${task.title} afronden`}
+                      className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line bg-white text-sage-600 transition hover:border-sage-500 hover:bg-sage-50 disabled:opacity-60"
+                      disabled={completingTaskId === task.id}
+                      type="button"
+                      onClick={() => void completeTask(task)}
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
                   )}
+                  <div>
+                    <p className="font-medium">{task.title}</p>
+                    {asDate(task.dueDate) && (
+                      <p className="text-muted">
+                        {formatDay(asDate(task.dueDate)!)}
+                      </p>
+                    )}
+                  </div>
                 </li>
               ))}
             </ul>

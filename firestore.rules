@@ -27,6 +27,19 @@ service cloud.firestore {
       return isMember(householdId) && role(householdId) == 'admin';
     }
 
+    function publicPollDocument(publicId) {
+      return /databases/$(database)/documents/publicDatePolls/$(publicId);
+    }
+
+    function publicPollOwnerDocument(publicId) {
+      return /databases/$(database)/documents/publicDatePollOwners/$(publicId);
+    }
+
+    function publicPollIsOpen(publicId) {
+      let poll = get(publicPollDocument(publicId));
+      return poll.data.status == 'open' && poll.data.expiresAt > request.time;
+    }
+
     function initialAdminMembership(householdId, memberId) {
       return signedIn() &&
         memberId == request.auth.uid &&
@@ -128,6 +141,28 @@ service cloud.firestore {
         allow delete: if canEdit(householdId);
       }
 
+      match /calendarConnections/{connectionId} {
+        allow read: if canEdit(householdId) &&
+          resource.data.userId == request.auth.uid;
+        allow create, update: if canEdit(householdId) &&
+          connectionId == request.auth.uid &&
+          request.resource.data.householdId == householdId &&
+          request.resource.data.userId == request.auth.uid &&
+          request.resource.data.provider == 'google';
+        allow delete: if canEdit(householdId) &&
+          connectionId == request.auth.uid &&
+          resource.data.userId == request.auth.uid;
+      }
+
+      match /datePolls/{pollId} {
+        allow read, create, update, delete: if canEdit(householdId);
+
+        match /responses/{responseId} {
+          allow read, update, delete: if canEdit(householdId);
+          allow create: if false;
+        }
+      }
+
       match /notifications/{notificationId} {
         allow read: if canEdit(householdId) ||
           (isMember(householdId) && resource.data.recipientId == request.auth.uid);
@@ -144,6 +179,59 @@ service cloud.firestore {
     match /{path=**}/invites/{inviteId} {
       allow read: if signedIn() &&
         request.auth.token.email == resource.data.email;
+    }
+
+    match /publicDatePolls/{publicId} {
+      allow read: if resource.data.expiresAt > request.time &&
+        (resource.data.status == 'open' ||
+          resource.data.status == 'closed' ||
+          resource.data.status == 'scheduled');
+      allow create: if signedIn() &&
+        canEdit(getAfter(publicPollOwnerDocument(publicId)).data.householdId) &&
+        getAfter(publicPollOwnerDocument(publicId)).data.createdBy == request.auth.uid &&
+        request.resource.data.keys().hasOnly([
+          'title',
+          'description',
+          'location',
+          'status',
+          'candidateSlots',
+          'expiresAt',
+          'createdAt',
+          'updatedAt'
+        ]);
+      allow update, delete: if signedIn() &&
+        canEdit(get(publicPollOwnerDocument(publicId)).data.householdId);
+
+      match /responses/{responseId} {
+        allow read, update, delete: if signedIn() &&
+          canEdit(get(publicPollOwnerDocument(publicId)).data.householdId);
+        allow create: if publicPollIsOpen(publicId) &&
+          request.resource.data.keys().hasOnly([
+            'name',
+            'email',
+            'choices',
+            'createdAt',
+            'updatedAt'
+          ]) &&
+          request.resource.data.name is string &&
+          request.resource.data.name.size() > 0 &&
+          request.resource.data.name.size() <= 80;
+      }
+    }
+
+    match /publicDatePollOwners/{publicId} {
+      allow read, update, delete: if signedIn() &&
+        canEdit(resource.data.householdId);
+      allow create: if signedIn() &&
+        request.resource.data.keys().hasOnly([
+          'householdId',
+          'pollId',
+          'createdBy',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        request.resource.data.createdBy == request.auth.uid &&
+        canEdit(request.resource.data.householdId);
     }
   }
 }

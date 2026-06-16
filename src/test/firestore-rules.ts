@@ -6,6 +6,7 @@ import {
   type RulesTestEnvironment,
 } from "@firebase/rules-unit-testing";
 import {
+  addDoc,
   collection,
   collectionGroup,
   deleteDoc,
@@ -18,7 +19,7 @@ import {
   where,
   writeBatch,
 } from "firebase/firestore";
-import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 const projectId = "taskhive-rules-test";
 const householdId = "family-house";
@@ -72,6 +73,14 @@ function agendaPath(id: string, household = householdId) {
 
 function invitePath(id: string, household = householdId) {
   return `${householdPath(household)}/invites/${id}`;
+}
+
+function publicPollPath(id = "public-family-poll") {
+  return `publicDatePolls/${id}`;
+}
+
+function publicPollOwnerPath(id = "public-family-poll") {
+  return `publicDatePollOwners/${id}`;
 }
 
 function memberDoc(uid: string, email: string, role: string) {
@@ -190,6 +199,27 @@ async function seedHouseholds() {
       createdBy: adminUid,
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+    await setDoc(doc(db, publicPollPath()), {
+      title: "Eten met vrienden",
+      status: "open",
+      candidateSlots: [
+        {
+          id: "slot-1",
+          startDateTime: new Date("2026-07-01T18:00:00.000Z"),
+          endDateTime: new Date("2026-07-01T20:00:00.000Z"),
+        },
+      ],
+      expiresAt: new Date("2027-01-01T00:00:00.000Z"),
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-01-01T00:00:00.000Z"),
+    });
+    await setDoc(doc(db, publicPollOwnerPath()), {
+      householdId,
+      pollId: "date-poll",
+      createdBy: adminUid,
+      createdAt: new Date("2026-01-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-01-01T00:00:00.000Z"),
     });
   });
 }
@@ -428,6 +458,80 @@ describe("Firestore security rules", () => {
         acceptedBy: invitedUid,
         updatedAt: "2026-01-02T00:00:00.000Z",
       }),
+    );
+  });
+
+  it("beschermt publieke datumprikker-links zonder huishouddata te lekken", async () => {
+    const admin = authedDb(adminUid, adminEmail);
+    const anonymous = anonDb();
+
+    const publicPoll = await assertSucceeds(
+      getDoc(doc(anonymous, publicPollPath())),
+    );
+    expect(publicPoll.data()).not.toHaveProperty("householdId");
+    expect(publicPoll.data()).not.toHaveProperty("pollId");
+    await assertFails(getDoc(doc(anonymous, publicPollOwnerPath())));
+    await assertFails(
+      setDoc(doc(anonymous, publicPollPath("anonymous-poll")), {
+        title: "Niet toegestaan",
+        status: "open",
+        candidateSlots: [],
+        expiresAt: new Date("2027-01-01T00:00:00.000Z"),
+      }),
+    );
+
+    const publicId = "admin-public-poll";
+    const adminBatch = writeBatch(admin);
+    adminBatch.set(doc(admin, `${householdPath()}/datePolls/date-poll-admin`), {
+      householdId,
+      title: "Borrel plannen",
+      status: "open",
+      publicId,
+      durationMinutes: 120,
+      timeZone: "Europe/Amsterdam",
+      rangeStart: new Date("2026-07-01T00:00:00.000Z"),
+      rangeEnd: new Date("2026-07-31T23:59:00.000Z"),
+      candidateSlots: [],
+      createdBy: adminUid,
+      createdAt: new Date("2026-07-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-07-01T00:00:00.000Z"),
+    });
+    adminBatch.set(doc(admin, publicPollPath(publicId)), {
+      title: "Borrel plannen",
+      status: "open",
+      candidateSlots: [],
+      expiresAt: new Date("2027-01-01T00:00:00.000Z"),
+      createdAt: new Date("2026-07-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-07-01T00:00:00.000Z"),
+    });
+    adminBatch.set(doc(admin, publicPollOwnerPath(publicId)), {
+      householdId,
+      pollId: "date-poll-admin",
+      createdBy: adminUid,
+      createdAt: new Date("2026-07-01T00:00:00.000Z"),
+      updatedAt: new Date("2026-07-01T00:00:00.000Z"),
+    });
+    await assertSucceeds(adminBatch.commit());
+
+    await assertSucceeds(
+      addDoc(collection(anonymous, `${publicPollPath()}/responses`), {
+        name: "Sam",
+        choices: { "slot-1": "yes" },
+        createdAt: new Date("2026-07-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-07-01T00:00:00.000Z"),
+      }),
+    );
+    await assertFails(
+      addDoc(collection(anonymous, `${publicPollPath()}/responses`), {
+        name: "Sam",
+        choices: { "slot-1": "yes" },
+        admin: true,
+        createdAt: new Date("2026-07-01T00:00:00.000Z"),
+        updatedAt: new Date("2026-07-01T00:00:00.000Z"),
+      }),
+    );
+    await assertSucceeds(
+      getDocs(collection(admin, `${publicPollPath()}/responses`)),
     );
   });
 });

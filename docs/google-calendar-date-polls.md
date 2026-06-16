@@ -142,8 +142,6 @@ Voor publieke links is een aparte publieke collectie veiliger:
 
 ```text
 publicDatePolls/{publicId}
-  householdId
-  pollId
   title
   description?
   location?
@@ -156,9 +154,16 @@ publicDatePolls/{publicId}/responses/{responseId}
   email?
   choices
   createdAt
+
+publicDatePollOwners/{publicId}
+  householdId
+  pollId
+  createdBy
+  createdAt
+  updatedAt
 ```
 
-De publieke collectie bevat alleen wat vrienden mogen zien. Geen agenda-inhoud, geen huishoudleden, geen privé-items.
+De publieke poll-doc bevat alleen wat vrienden mogen zien. Geen interne huishoud-ID, geen agenda-inhoud, geen huishoudleden, geen privé-items. De owner-koppeling staat in `publicDatePollOwners` en is alleen leesbaar voor admins/partners van het huishouden.
 
 ## Security rules
 
@@ -166,7 +171,7 @@ Voor publieke polls:
 
 - Iedereen mag een actieve poll lezen op basis van `publicId`.
 - Iedereen mag een response maken met beperkte velden.
-- Niemand mag responses wijzigen of verwijderen behalve admins/partners via de huishoudroute.
+- Niemand mag responses wijzigen of verwijderen behalve admins/partners via de afgeschermde owner-koppeling.
 - Publieke poll moet kunnen verlopen met `expiresAt`.
 
 Voor Google-koppelingen:
