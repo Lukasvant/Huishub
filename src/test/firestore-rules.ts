@@ -367,7 +367,7 @@ describe("Firestore security rules", () => {
         updatedAt: "2026-01-02T00:00:00.000Z",
       }),
     );
-    await assertFails(
+    await assertSucceeds(
       updateDoc(doc(admin, memberPath(partnerUid)), {
         role: "admin",
         updatedAt: "2026-01-02T00:00:00.000Z",
@@ -390,7 +390,46 @@ describe("Firestore security rules", () => {
       ),
     );
     await assertFails(getDocs(collectionGroup(viewer, "members")));
-    await assertSucceeds(deleteDoc(doc(admin, memberPath(viewerUid))));
+    await assertSucceeds(deleteDoc(doc(viewer, memberPath(viewerUid))));
+  });
+
+  it("laat een eigenaar zichzelf beheerder maken en een admin huishouden volledig verwijderen", async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const db = context.firestore();
+      await setDoc(doc(db, householdPath("owner-house")), {
+        name: "Eigen huis",
+        createdBy: partnerUid,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      });
+      await setDoc(doc(db, memberPath(partnerUid, "owner-house")), {
+        householdId: "owner-house",
+        userId: partnerUid,
+        email: partnerEmail,
+        displayName: "partner",
+        role: "partner",
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      });
+    });
+
+    const partner = authedDb(partnerUid, partnerEmail);
+    await assertFails(
+      deleteDoc(doc(partner, memberPath(partnerUid, "owner-house"))),
+    );
+    await assertSucceeds(
+      updateDoc(doc(partner, memberPath(partnerUid, "owner-house")), {
+        role: "admin",
+        updatedAt: "2026-01-02T00:00:00.000Z",
+      }),
+    );
+
+    const admin = authedDb(adminUid, adminEmail);
+    const batch = writeBatch(admin);
+    batch.delete(doc(admin, memberPath(adminUid)));
+    batch.delete(doc(admin, memberPath(secondAdminUid)));
+    batch.delete(doc(admin, householdPath()));
+    await assertSucceeds(batch.commit());
   });
 
   it("laat alleen admins uitnodigingen beheren en alleen het juiste e-mailadres claimen", async () => {

@@ -1,5 +1,6 @@
 import type {
   AgendaItem,
+  Household,
   HouseholdMember,
   HouseholdRole,
   Task,
@@ -9,8 +10,12 @@ export function canEdit(role?: HouseholdRole): boolean {
   return role === "admin" || role === "partner";
 }
 
-export function canManageMembers(role?: HouseholdRole): boolean {
-  return role === "admin";
+export function canManageMembers(
+  role?: HouseholdRole,
+  household?: Pick<Household, "createdBy">,
+  userId?: string,
+): boolean {
+  return role === "admin" || Boolean(userId && household?.createdBy === userId);
 }
 
 export function canViewTask(role: HouseholdRole, task: Task): boolean {

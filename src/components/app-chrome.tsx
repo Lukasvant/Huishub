@@ -12,6 +12,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { useHousehold } from "@/contexts/household-context";
+import { canManageMembers } from "@/lib/permissions";
 import { Button } from "@/components/ui";
 import clsx from "clsx";
 
@@ -54,13 +55,13 @@ function NavItem({
 
 export function AppChrome({ children }: { children: ReactNode }) {
   const { household, member } = useHousehold();
-  const { logout } = useAuth();
-  const role =
-    member?.role === "admin"
-      ? "Beheerder"
-      : member?.role === "partner"
-        ? "Partner"
-        : "Alleen lezen";
+  const { logout, user } = useAuth();
+  const managesHousehold = canManageMembers(member?.role, household, user?.uid);
+  const role = managesHousehold
+    ? "Beheerder"
+    : member?.role === "partner"
+      ? "Partner"
+      : "Alleen lezen";
 
   return (
     <div className="min-h-screen md:flex">

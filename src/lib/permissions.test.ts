@@ -40,6 +40,9 @@ describe("rolrechten", () => {
     expect(canEdit("viewer")).toBe(false);
     expect(canManageMembers("partner")).toBe(false);
     expect(canManageMembers("admin")).toBe(true);
+    expect(canManageMembers("partner", { createdBy: "owner" }, "owner")).toBe(
+      true,
+    );
   });
 
   it("schermt verborgen taken en privé-afspraken af voor viewers", () => {

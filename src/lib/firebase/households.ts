@@ -6,6 +6,7 @@ import {
   collectionGroup,
   deleteDoc,
   doc,
+  type DocumentReference,
   getDocs,
   query,
   runTransaction,
@@ -95,7 +96,7 @@ export async function inviteHouseholdMember(
 export async function updateHouseholdMemberRole(
   householdId: string,
   memberId: string,
-  role: Exclude<HouseholdRole, "admin">,
+  role: HouseholdRole,
 ): Promise<void> {
   await updateDoc(
     doc(database(), "households", householdId, "members", memberId),
@@ -106,6 +107,15 @@ export async function updateHouseholdMemberRole(
   );
 }
 
+export async function leaveHousehold(
+  householdId: string,
+  userId: string,
+): Promise<void> {
+  await deleteDoc(
+    doc(database(), "households", householdId, "members", userId),
+  );
+}
+
 export async function removeHouseholdMember(
   householdId: string,
   memberId: string,
@@ -113,6 +123,73 @@ export async function removeHouseholdMember(
   await deleteDoc(
     doc(database(), "households", householdId, "members", memberId),
   );
+}
+
+async function collectCollectionDeletes(
+  references: DocumentReference[],
+  collectionPath: string,
+): Promise<void> {
+  const snapshot = await getDocs(collection(database(), collectionPath));
+  snapshot.docs.forEach((entry) => references.push(entry.ref));
+}
+
+export async function deleteHousehold(householdId: string): Promise<void> {
+  const firestore = database();
+  const references: DocumentReference[] = [];
+  const householdRef = doc(firestore, "households", householdId);
+
+  await Promise.all(
+    [
+      "agendaItems",
+      "calendarConnections",
+      "groceryItems",
+      "invites",
+      "members",
+      "notifications",
+      "tasks",
+    ].map((name) =>
+      collectCollectionDeletes(references, `households/${householdId}/${name}`),
+    ),
+  );
+
+  const datePolls = await getDocs(
+    collection(firestore, "households", householdId, "datePolls"),
+  );
+  await Promise.all(
+    datePolls.docs.map(async (poll) => {
+      const responses = await getDocs(collection(poll.ref, "responses"));
+      responses.docs.forEach((response) => references.push(response.ref));
+      references.push(poll.ref);
+    }),
+  );
+
+  const publicOwners = await getDocs(
+    query(
+      collection(firestore, "publicDatePollOwners"),
+      where("householdId", "==", householdId),
+    ),
+  );
+  await Promise.all(
+    publicOwners.docs.map(async (owner) => {
+      const responses = await getDocs(
+        collection(firestore, "publicDatePolls", owner.id, "responses"),
+      );
+      responses.docs.forEach((response) => references.push(response.ref));
+      references.push(doc(firestore, "publicDatePolls", owner.id));
+      references.push(owner.ref);
+    }),
+  );
+
+  references.push(householdRef);
+  if (references.length > 450) {
+    throw new Error(
+      "Dit huishouden bevat te veel gegevens om direct te verwijderen.",
+    );
+  }
+
+  const batch = writeBatch(firestore);
+  references.forEach((reference) => batch.delete(reference));
+  await batch.commit();
 }
 
 export async function cancelHouseholdInvite(

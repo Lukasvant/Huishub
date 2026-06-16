@@ -25,7 +25,7 @@ import type { HouseholdRole } from "@/types/models";
 export default function MembersPage() {
   const { user } = useAuth();
   const { household, member } = useHousehold();
-  const admin = canManageMembers(member?.role);
+  const admin = canManageMembers(member?.role, household, user?.uid);
   const { items: members, loading, error } = useMembers(household?.id);
   const { items: invites, loading: invitesLoading } = useInvites(
     admin ? household?.id : undefined,
@@ -53,10 +53,7 @@ export default function MembersPage() {
     }
   }
 
-  async function changeRole(
-    memberId: string,
-    nextRole: Exclude<HouseholdRole, "admin">,
-  ) {
+  async function changeRole(memberId: string, nextRole: HouseholdRole) {
     if (!household || !admin) return;
     setActionBusy(`role-${memberId}`);
     setMessage(undefined);
@@ -157,13 +154,11 @@ export default function MembersPage() {
                         onChange={(event) =>
                           void changeRole(
                             entry.id,
-                            event.target.value as Exclude<
-                              HouseholdRole,
-                              "admin"
-                            >,
+                            event.target.value as HouseholdRole,
                           )
                         }
                       >
+                        <option value="admin">Beheerder</option>
                         <option value="partner">Partner</option>
                         <option value="viewer">Alleen lezen</option>
                       </select>

@@ -10,6 +10,10 @@ service cloud.firestore {
       return /databases/$(database)/documents/households/$(householdId)/members/$(request.auth.uid);
     }
 
+    function householdDocument(householdId) {
+      return /databases/$(database)/documents/households/$(householdId);
+    }
+
     function isMember(householdId) {
       return signedIn() && exists(memberDocument(householdId));
     }
@@ -18,13 +22,29 @@ service cloud.firestore {
       return get(memberDocument(householdId)).data.role;
     }
 
+    function isOwner(householdId) {
+      return signedIn() &&
+        get(householdDocument(householdId)).data.createdBy == request.auth.uid;
+    }
+
     function canEdit(householdId) {
       return isMember(householdId) &&
-        (role(householdId) == 'admin' || role(householdId) == 'partner');
+        (role(householdId) == 'admin' ||
+          role(householdId) == 'partner' ||
+          isOwner(householdId));
     }
 
     function isAdmin(householdId) {
-      return isMember(householdId) && role(householdId) == 'admin';
+      return isMember(householdId) &&
+        (role(householdId) == 'admin' || isOwner(householdId));
+    }
+
+    function householdWillBeDeleted(householdId) {
+      return !existsAfter(householdDocument(householdId));
+    }
+
+    function validRole(role) {
+      return role == 'admin' || role == 'partner' || role == 'viewer';
     }
 
     function publicPollDocument(publicId) {
@@ -44,7 +64,7 @@ service cloud.firestore {
       return signedIn() &&
         memberId == request.auth.uid &&
         !exists(/databases/$(database)/documents/households/$(householdId)) &&
-        getAfter(/databases/$(database)/documents/households/$(householdId)).data.createdBy == request.auth.uid &&
+        getAfter(householdDocument(householdId)).data.createdBy == request.auth.uid &&
         request.resource.data.userId == request.auth.uid &&
         request.resource.data.role == 'admin';
     }
@@ -79,15 +99,24 @@ service cloud.firestore {
         allow create: if initialAdminMembership(householdId, memberId) ||
           invitedMembership(householdId, memberId);
         allow update: if isAdmin(householdId) &&
-          resource.data.userId != request.auth.uid &&
-          resource.data.role != 'admin' &&
+          (resource.data.userId != request.auth.uid || isOwner(householdId)) &&
           request.resource.data.diff(resource.data).affectedKeys()
             .hasOnly(['role', 'updatedAt']) &&
-          (request.resource.data.role == 'partner' ||
-            request.resource.data.role == 'viewer');
-        allow delete: if isAdmin(householdId) &&
+          validRole(request.resource.data.role) &&
+          (resource.data.role != 'admin' || request.resource.data.role == 'admin');
+        allow delete: if (
+          isAdmin(householdId) &&
+          householdWillBeDeleted(householdId)
+        ) || (
+          isAdmin(householdId) &&
           resource.data.userId != request.auth.uid &&
-          resource.data.role != 'admin';
+          resource.data.role != 'admin'
+        ) || (
+          signedIn() &&
+          resource.data.userId == request.auth.uid &&
+          resource.data.role != 'admin' &&
+          !isOwner(householdId)
+        );
       }
 
       match /invites/{inviteId} {
@@ -150,8 +179,9 @@ service cloud.firestore {
           request.resource.data.userId == request.auth.uid &&
           request.resource.data.provider == 'google';
         allow delete: if canEdit(householdId) &&
-          connectionId == request.auth.uid &&
-          resource.data.userId == request.auth.uid;
+          ((connectionId == request.auth.uid &&
+            resource.data.userId == request.auth.uid) ||
+            isAdmin(householdId));
       }
 
       match /datePolls/{pollId} {
