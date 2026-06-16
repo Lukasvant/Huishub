@@ -9,7 +9,8 @@ import { updateHouseholdName } from "@/lib/firebase/households";
 import { canManageMembers } from "@/lib/permissions";
 
 export default function HouseholdSettingsPage() {
-  const { household, member, households, selectHousehold } = useHousehold();
+  const { household, householdNames, member, households, selectHousehold } =
+    useHousehold();
   const [name, setName] = useState(household?.name ?? "");
   const [message, setMessage] = useState<string>();
   const admin = canManageMembers(member?.role);
@@ -63,9 +64,10 @@ export default function HouseholdSettingsPage() {
               >
                 {households.map((entry) => (
                   <option key={entry.householdId} value={entry.householdId}>
-                    {entry.householdId === household?.id
-                      ? household.name
-                      : entry.householdId}
+                    {householdNames[entry.householdId] ??
+                      (entry.householdId === household?.id
+                        ? household.name
+                        : "Huishouden laden...")}
                   </option>
                 ))}
               </select>

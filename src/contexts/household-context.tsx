@@ -26,6 +26,7 @@ import type { Household, HouseholdMember } from "@/types/models";
 
 interface HouseholdContextValue {
   households: HouseholdMember[];
+  householdNames: Record<string, string>;
   household?: Household;
   member?: HouseholdMember;
   loading: boolean;
@@ -46,6 +47,9 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
   const [households, setHouseholds] = useState<HouseholdMember[]>([]);
   const [selectedId, setSelectedId] = useState<string>();
   const [household, setHousehold] = useState<Household>();
+  const [householdNames, setHouseholdNames] = useState<Record<string, string>>(
+    {},
+  );
   const [loadedForUser, setLoadedForUser] = useState<string>();
   const [error, setError] = useState<string>();
   const [loadAttempt, setLoadAttempt] = useState(0);
@@ -117,6 +121,35 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
     );
   }, [selectedId]);
 
+  const currentUserLoaded = Boolean(user && loadedForUser === user.uid);
+
+  useEffect(() => {
+    if (!currentUserLoaded || !db || households.length === 0) {
+      return;
+    }
+
+    const firestore = db;
+    const unsubscribes = households.map((membership) =>
+      onSnapshot(
+        doc(firestore, "households", membership.householdId),
+        (snapshot) => {
+          if (!snapshot.exists()) return;
+          const nextHousehold = {
+            id: snapshot.id,
+            ...snapshot.data(),
+          } as Household;
+          setHouseholdNames((current) => ({
+            ...current,
+            [snapshot.id]: nextHousehold.name,
+          }));
+        },
+        () => setError("Een huishoudnaam kon niet worden geladen."),
+      ),
+    );
+
+    return () => unsubscribes.forEach((unsubscribe) => unsubscribe());
+  }, [currentUserLoaded, households]);
+
   const selectHousehold = useCallback((householdId: string) => {
     localStorage.setItem(selectedKey, householdId);
     localStorage.removeItem(legacySelectedKey);
@@ -141,7 +174,6 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
   const member = households.find(
     (membership) => membership.householdId === selectedId,
   );
-  const currentUserLoaded = Boolean(user && loadedForUser === user.uid);
   const activeMember = currentUserLoaded ? member : undefined;
   const activeHousehold =
     activeMember && household?.id === selectedId ? household : undefined;
@@ -151,6 +183,7 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
   const value = useMemo<HouseholdContextValue>(
     () => ({
       households: currentUserLoaded ? households : [],
+      householdNames,
       household: activeHousehold,
       member: activeMember,
       loading,
@@ -162,6 +195,7 @@ export function HouseholdProvider({ children }: { children: ReactNode }) {
     [
       createNewHousehold,
       error,
+      householdNames,
       households,
       loading,
       activeHousehold,
