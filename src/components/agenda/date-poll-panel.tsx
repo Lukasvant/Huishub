@@ -1,11 +1,15 @@
 "use client";
 
 import { addDays } from "date-fns";
-import { CalendarCheck, LinkIcon, Wand2 } from "lucide-react";
-import { useMemo, useState, type FormEvent } from "react";
+import { CalendarCheck, LinkIcon, Upload, Wand2 } from "lucide-react";
+import { useMemo, useState, type ChangeEvent, type FormEvent } from "react";
 import type { User } from "firebase/auth";
 import { Button, Card, Message } from "@/components/ui";
-import { suggestDatePollSlots } from "@/lib/agenda/date-poll-planner";
+import {
+  suggestDatePollSlots,
+  type BusyBlock,
+} from "@/lib/agenda/date-poll-planner";
+import { parseAppleCalendarIcs } from "@/lib/apple-calendar/ics";
 import { dateInputValue, formatDay, formatTime } from "@/lib/date";
 import { createDatePoll } from "@/lib/firebase/date-polls";
 import {
@@ -47,6 +51,8 @@ export function DatePollPanel({
   const [allowedStartHour, setAllowedStartHour] = useState(18);
   const [allowedEndHour, setAllowedEndHour] = useState(22);
   const [googleAccessToken, setGoogleAccessToken] = useState<string>();
+  const [appleBusyBlocks, setAppleBusyBlocks] = useState<BusyBlock[]>([]);
+  const [appleCalendarFileName, setAppleCalendarFileName] = useState<string>();
   const [suggestions, setSuggestions] = useState<DatePollSlot[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [shareLink, setShareLink] = useState<string>();
@@ -81,6 +87,34 @@ export function DatePollPanel({
     }
   }
 
+  async function importAppleCalendar(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setBusy(true);
+    setError(undefined);
+    setMessage(undefined);
+    setShareLink(undefined);
+    try {
+      const text = await file.text();
+      const importedEvents = parseAppleCalendarIcs(text);
+      setAppleBusyBlocks(importedEvents);
+      setAppleCalendarFileName(file.name);
+      setSuggestions([]);
+      setSelectedIds([]);
+      setMessage(
+        importedEvents.length > 0
+          ? `${importedEvents.length} afspraken uit Apple Kalender ingelezen. Ze tellen mee als bezet.`
+          : "Er zijn geen afspraken gevonden in dit Apple Kalender-bestand.",
+      );
+    } catch {
+      setError("Apple Kalender-bestand kon niet worden gelezen.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function generateSuggestions(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
@@ -97,6 +131,11 @@ export function DatePollPanel({
             timeMax: end,
           })
         : [];
+      const calendarSources = [
+        "TaskHive-agenda",
+        ...(googleAccessToken ? ["Google Agenda"] : []),
+        ...(appleBusyBlocks.length > 0 ? ["Apple Kalender"] : []),
+      ];
       const nextSuggestions = suggestDatePollSlots({
         rangeStart: start,
         rangeEnd: end,
@@ -104,15 +143,17 @@ export function DatePollPanel({
         allowedWeekdays,
         allowedStartHour,
         allowedEndHour,
-        busyBlocks: googleBusy,
+        busyBlocks: [...googleBusy, ...appleBusyBlocks],
         agendaItems,
       });
       setSuggestions(nextSuggestions);
       setSelectedIds(nextSuggestions.slice(0, 5).map((slot) => slot.id));
       setMessage(
-        googleAccessToken
-          ? "Opties gemaakt met Google Agenda en TaskHive-agenda."
-          : "Opties gemaakt met alleen de TaskHive-agenda. Koppel Google voor een completer beeld.",
+        `Opties gemaakt met ${calendarSources.join(", ")}.${
+          googleAccessToken || appleBusyBlocks.length > 0
+            ? ""
+            : " Koppel Google of importeer Apple Kalender voor een completer beeld."
+        }`,
       );
     } catch {
       setError("Vrije momenten ophalen lukte niet.");
@@ -157,16 +198,41 @@ export function DatePollPanel({
             agenda.
           </p>
         </div>
-        <Button
-          disabled={busy || !user}
-          type="button"
-          variant="secondary"
-          onClick={connectGoogle}
-        >
-          <CalendarCheck className="h-4 w-4" />
-          Google
-        </Button>
+        <div className="flex shrink-0 flex-wrap justify-end gap-2">
+          <Button
+            disabled={busy || !user}
+            type="button"
+            variant="secondary"
+            onClick={connectGoogle}
+          >
+            <CalendarCheck className="h-4 w-4" />
+            Google
+          </Button>
+          <label
+            className={`inline-flex min-h-11 items-center justify-center gap-2 rounded-full border border-line bg-transparent px-4 py-2.5 text-xs font-semibold uppercase tracking-[0.12em] text-ink transition ${
+              busy
+                ? "cursor-not-allowed opacity-60"
+                : "cursor-pointer hover:border-sage-500 hover:bg-sage-50"
+            }`}
+          >
+            <Upload className="h-4 w-4" />
+            Apple .ics
+            <input
+              accept=".ics,text/calendar"
+              className="sr-only"
+              disabled={busy}
+              type="file"
+              onChange={importAppleCalendar}
+            />
+          </label>
+        </div>
       </div>
+      {appleCalendarFileName && (
+        <p className="mt-2 text-xs text-muted">
+          Apple Kalender: {appleCalendarFileName} · {appleBusyBlocks.length}{" "}
+          afspraak{appleBusyBlocks.length === 1 ? "" : "en"} ingelezen
+        </p>
+      )}
       <form
         className="mt-4 grid gap-3 md:grid-cols-2"
         onSubmit={generateSuggestions}

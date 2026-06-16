@@ -101,6 +101,10 @@ De geplande Google Agenda-koppeling en publieke datumprikker staan uitgewerkt in
 
 `parseDutchGroceryInput()` staat los in `src/lib/groceries/parser.ts`. Browser Speech Recognition verzorgt de transcriptie wanneer beschikbaar; anders kan dezelfde bevestigingsflow handmatig worden gebruikt.
 
+## Agenda-koppelingen
+
+De datumprikker kan vrije opties maken met TaskHive-afspraken, Google Freebusy en Apple Kalender-exportbestanden. Apple/macOS Kalender wordt in V1 ondersteund via `.ics` import, omdat een web/PWA niet direct in de lokale macOS Kalender kan lezen zonder native app of server-side CalDAV-koppeling. Geimporteerde `.ics` afspraken worden alleen als bezette blokken gebruikt bij het maken van opties en worden niet stilzwijgend opgeslagen als TaskHive-afspraken.
+
 ## Hosting en kosten
 
 V1 gebruikt geen Firebase Storage of App Hosting. De app exporteert statisch naar `out/` en kan daardoor met klassieke Firebase Hosting op het gratis Spark-plan draaien. Binnen Spark wordt Hosting bij overschrijding van de gratis quota beperkt in plaats van doorgerekend; er hoeft geen betaalaccount gekoppeld te worden.
