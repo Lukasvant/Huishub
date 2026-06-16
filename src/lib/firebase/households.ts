@@ -4,12 +4,14 @@ import type { User } from "firebase/auth";
 import {
   collection,
   collectionGroup,
+  deleteDoc,
   doc,
   getDocs,
   query,
   runTransaction,
   serverTimestamp,
   setDoc,
+  updateDoc,
   where,
   writeBatch,
 } from "firebase/firestore";
@@ -88,6 +90,38 @@ export async function inviteHouseholdMember(
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
+}
+
+export async function updateHouseholdMemberRole(
+  householdId: string,
+  memberId: string,
+  role: Exclude<HouseholdRole, "admin">,
+): Promise<void> {
+  await updateDoc(
+    doc(database(), "households", householdId, "members", memberId),
+    {
+      role,
+      updatedAt: serverTimestamp(),
+    },
+  );
+}
+
+export async function removeHouseholdMember(
+  householdId: string,
+  memberId: string,
+): Promise<void> {
+  await deleteDoc(
+    doc(database(), "households", householdId, "members", memberId),
+  );
+}
+
+export async function cancelHouseholdInvite(
+  householdId: string,
+  inviteId: string,
+): Promise<void> {
+  await deleteDoc(
+    doc(database(), "households", householdId, "invites", inviteId),
+  );
 }
 
 export async function claimPendingInvitations(user: User): Promise<void> {

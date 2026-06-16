@@ -25,6 +25,7 @@ const householdId = "family-house";
 const otherHouseholdId = "other-house";
 
 const adminUid = "admin-user";
+const secondAdminUid = "second-admin-user";
 const partnerUid = "partner-user";
 const viewerUid = "viewer-user";
 const outsiderUid = "outsider-user";
@@ -32,6 +33,7 @@ const invitedUid = "invited-user";
 const wrongInviteeUid = "wrong-invitee";
 
 const adminEmail = "admin@example.com";
+const secondAdminEmail = "second-admin@example.com";
 const partnerEmail = "partner@example.com";
 const viewerEmail = "viewer@example.com";
 const outsiderEmail = "outsider@example.com";
@@ -141,6 +143,9 @@ async function seedHouseholds() {
     });
     await setDoc(doc(db, memberPath(adminUid)), {
       ...memberDoc(adminUid, adminEmail, "admin"),
+    });
+    await setDoc(doc(db, memberPath(secondAdminUid)), {
+      ...memberDoc(secondAdminUid, secondAdminEmail, "admin"),
     });
     await setDoc(doc(db, memberPath(partnerUid)), {
       ...memberDoc(partnerUid, partnerEmail, "partner"),
@@ -326,7 +331,26 @@ describe("Firestore security rules", () => {
 
     await assertSucceeds(getDoc(doc(admin, memberPath(partnerUid))));
     await assertFails(deleteDoc(doc(partner, memberPath(viewerUid))));
+    await assertSucceeds(
+      updateDoc(doc(admin, memberPath(partnerUid)), {
+        role: "viewer",
+        updatedAt: "2026-01-02T00:00:00.000Z",
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(admin, memberPath(partnerUid)), {
+        role: "admin",
+        updatedAt: "2026-01-02T00:00:00.000Z",
+      }),
+    );
+    await assertFails(
+      updateDoc(doc(admin, memberPath(partnerUid)), {
+        email: "changed@example.com",
+        updatedAt: "2026-01-02T00:00:00.000Z",
+      }),
+    );
     await assertFails(deleteDoc(doc(admin, memberPath(adminUid))));
+    await assertFails(deleteDoc(doc(admin, memberPath(secondAdminUid))));
     await assertSucceeds(
       getDocs(
         query(
@@ -336,6 +360,7 @@ describe("Firestore security rules", () => {
       ),
     );
     await assertFails(getDocs(collectionGroup(viewer, "members")));
+    await assertSucceeds(deleteDoc(doc(admin, memberPath(viewerUid))));
   });
 
   it("laat alleen admins uitnodigingen beheren en alleen het juiste e-mailadres claimen", async () => {

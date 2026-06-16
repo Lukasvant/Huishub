@@ -178,6 +178,15 @@ export async function cleanBoughtGroceries(householdId: string): Promise<void> {
   await batch.commit();
 }
 
+export async function deleteGroceryItem(
+  householdId: string,
+  itemId: string,
+): Promise<void> {
+  await deleteDoc(
+    doc(database(), "households", householdId, "groceryItems", itemId),
+  );
+}
+
 export interface NewAgendaInput {
   title: string;
   description?: string;

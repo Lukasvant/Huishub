@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
 import {
@@ -13,7 +13,12 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { useHousehold } from "@/contexts/household-context";
 import { useInvites, useMembers } from "@/hooks/use-household-data";
-import { inviteHouseholdMember } from "@/lib/firebase/households";
+import {
+  cancelHouseholdInvite,
+  inviteHouseholdMember,
+  removeHouseholdMember,
+  updateHouseholdMemberRole,
+} from "@/lib/firebase/households";
 import { canManageMembers } from "@/lib/permissions";
 import type { HouseholdRole } from "@/types/models";
 
@@ -29,6 +34,7 @@ export default function MembersPage() {
   const [role, setRole] = useState<Exclude<HouseholdRole, "admin">>("partner");
   const [message, setMessage] = useState<string>();
   const [busy, setBusy] = useState(false);
+  const [actionBusy, setActionBusy] = useState<string>();
 
   async function invite(event: FormEvent) {
     event.preventDefault();
@@ -47,12 +53,60 @@ export default function MembersPage() {
     }
   }
 
+  async function changeRole(
+    memberId: string,
+    nextRole: Exclude<HouseholdRole, "admin">,
+  ) {
+    if (!household || !admin) return;
+    setActionBusy(`role-${memberId}`);
+    setMessage(undefined);
+    try {
+      await updateHouseholdMemberRole(household.id, memberId, nextRole);
+      setMessage("De rol is bijgewerkt.");
+    } catch {
+      setMessage("De rol kon niet worden bijgewerkt.");
+    } finally {
+      setActionBusy(undefined);
+    }
+  }
+
+  async function removeMember(memberId: string, label: string) {
+    if (!household || !admin) return;
+    if (!window.confirm(`${label} verwijderen uit dit huishouden?`)) return;
+    setActionBusy(`remove-${memberId}`);
+    setMessage(undefined);
+    try {
+      await removeHouseholdMember(household.id, memberId);
+      setMessage("Het lid is verwijderd.");
+    } catch {
+      setMessage("Het lid kon niet worden verwijderd.");
+    } finally {
+      setActionBusy(undefined);
+    }
+  }
+
+  async function cancelInvite(inviteId: string, inviteEmail: string) {
+    if (!household || !admin) return;
+    if (!window.confirm(`Uitnodiging voor ${inviteEmail} intrekken?`)) return;
+    setActionBusy(`invite-${inviteId}`);
+    setMessage(undefined);
+    try {
+      await cancelHouseholdInvite(household.id, inviteId);
+      setMessage("De uitnodiging is ingetrokken.");
+    } catch {
+      setMessage("De uitnodiging kon niet worden ingetrokken.");
+    } finally {
+      setActionBusy(undefined);
+    }
+  }
+
   const roleLabel = (value: HouseholdRole) =>
     value === "admin"
       ? "Beheerder"
       : value === "partner"
         ? "Partner · bewerken"
         : "Meekijker · alleen lezen";
+  const messageTone = message?.includes("kon") ? "error" : "success";
 
   if (loading || (admin && invitesLoading)) {
     return <LoadingScreen text="Leden laden..." />;
@@ -78,11 +132,58 @@ export default function MembersPage() {
           {error && <Message>{error}</Message>}
           <ul className="mt-3 divide-y divide-stone-100">
             {members.map((entry) => (
-              <li className="py-3" key={entry.id}>
-                <p className="font-medium">
-                  {entry.displayName || entry.email}
-                </p>
-                <p className="text-sm text-muted">{roleLabel(entry.role)}</p>
+              <li
+                className="flex flex-col gap-3 py-3 sm:flex-row sm:items-center sm:justify-between"
+                key={entry.id}
+              >
+                <div>
+                  <p className="font-medium">
+                    {entry.displayName || entry.email}
+                    {entry.userId === user?.uid && (
+                      <span className="ml-2 text-xs text-muted">jij</span>
+                    )}
+                  </p>
+                  <p className="text-sm text-muted">{roleLabel(entry.role)}</p>
+                </div>
+                {admin &&
+                  entry.userId !== user?.uid &&
+                  entry.role !== "admin" && (
+                    <div className="flex gap-2">
+                      <select
+                        aria-label={`Rol voor ${entry.email}`}
+                        className="field min-h-11 py-2 text-sm"
+                        disabled={Boolean(actionBusy)}
+                        value={entry.role}
+                        onChange={(event) =>
+                          void changeRole(
+                            entry.id,
+                            event.target.value as Exclude<
+                              HouseholdRole,
+                              "admin"
+                            >,
+                          )
+                        }
+                      >
+                        <option value="partner">Partner</option>
+                        <option value="viewer">Alleen lezen</option>
+                      </select>
+                      <Button
+                        aria-label={`${entry.email} verwijderen`}
+                        className="px-3"
+                        disabled={Boolean(actionBusy)}
+                        type="button"
+                        variant="ghost"
+                        onClick={() =>
+                          void removeMember(
+                            entry.id,
+                            entry.displayName || entry.email,
+                          )
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
               </li>
             ))}
           </ul>
@@ -116,13 +217,7 @@ export default function MembersPage() {
                   <option value="viewer">Oppas/familie · alleen lezen</option>
                 </select>
               </label>
-              {message && (
-                <Message
-                  tone={message.startsWith("Uitnodiging") ? "success" : "error"}
-                >
-                  {message}
-                </Message>
-              )}
+              {message && <Message tone={messageTone}>{message}</Message>}
               <Button className="w-full" disabled={busy} type="submit">
                 {busy ? "Uitnodigen..." : "Uitnodiging maken"}
               </Button>
@@ -134,9 +229,26 @@ export default function MembersPage() {
                 {invites
                   .filter((invite) => invite.status === "pending")
                   .map((invite) => (
-                    <p className="mt-2 text-sm text-muted" key={invite.id}>
-                      {invite.email} · {roleLabel(invite.role)}
-                    </p>
+                    <div
+                      className="mt-2 flex items-center justify-between gap-2 text-sm text-muted"
+                      key={invite.id}
+                    >
+                      <p>
+                        {invite.email} · {roleLabel(invite.role)}
+                      </p>
+                      <Button
+                        aria-label={`Uitnodiging voor ${invite.email} intrekken`}
+                        className="px-3"
+                        disabled={Boolean(actionBusy)}
+                        type="button"
+                        variant="ghost"
+                        onClick={() =>
+                          void cancelInvite(invite.id, invite.email)
+                        }
+                      >
+                        Intrekken
+                      </Button>
+                    </div>
                   ))}
               </div>
             )}

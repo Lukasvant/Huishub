@@ -65,8 +65,16 @@ service cloud.firestore {
         allow read: if isMember(householdId);
         allow create: if initialAdminMembership(householdId, memberId) ||
           invitedMembership(householdId, memberId);
-        allow update, delete: if isAdmin(householdId) &&
-          resource.data.userId != request.auth.uid;
+        allow update: if isAdmin(householdId) &&
+          resource.data.userId != request.auth.uid &&
+          resource.data.role != 'admin' &&
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['role', 'updatedAt']) &&
+          (request.resource.data.role == 'partner' ||
+            request.resource.data.role == 'viewer');
+        allow delete: if isAdmin(householdId) &&
+          resource.data.userId != request.auth.uid &&
+          resource.data.role != 'admin';
       }
 
       match /invites/{inviteId} {

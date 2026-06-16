@@ -5,28 +5,40 @@ import { useState, type FormEvent } from "react";
 import clsx from "clsx";
 import { Button, EmptyState, Message } from "@/components/ui";
 import type { NewGroceryInput } from "@/lib/firebase/data";
-import type { GroceryItem } from "@/types/models";
+import type { GroceryCategory, GroceryItem } from "@/types/models";
 
 interface GroceryPanelProps {
   items: GroceryItem[];
   canEdit: boolean;
   onAdd: (item: NewGroceryInput) => Promise<void>;
   onToggle: (item: GroceryItem) => Promise<void>;
+  onDelete: (itemId: string) => Promise<void>;
   onCleanup: () => Promise<void>;
 }
 
 const quickItems = ["Melk", "Brood", "Eieren", "Bananen", "Luiers"];
+const categories: Array<{ value: GroceryCategory; label: string }> = [
+  { value: "groente", label: "Groente" },
+  { value: "zuivel", label: "Zuivel" },
+  { value: "baby", label: "Baby" },
+  { value: "drogist", label: "Drogist" },
+  { value: "brood", label: "Brood" },
+  { value: "vlees", label: "Vlees" },
+  { value: "overig", label: "Overig" },
+];
 
 export function GroceryPanel({
   items,
   canEdit,
   onAdd,
   onToggle,
+  onDelete,
   onCleanup,
 }: GroceryPanelProps) {
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [shopLabel, setShopLabel] = useState("");
+  const [category, setCategory] = useState<GroceryCategory | "">("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const boughtCount = items.filter((item) => item.status === "bought").length;
@@ -55,11 +67,13 @@ export function GroceryPanel({
       name,
       ...(quantity.trim() ? { quantity: quantity.trim() } : {}),
       ...(shopLabel.trim() ? { shopLabel: shopLabel.trim() } : {}),
+      ...(category ? { category } : {}),
     });
     if (added) {
       setName("");
       setQuantity("");
       setShopLabel("");
+      setCategory("");
     }
   }
 
@@ -95,6 +109,24 @@ export function GroceryPanel({
               onChange={(event) => setShopLabel(event.target.value)}
             />
           </div>
+          <label className="mt-2 block">
+            <span className="sr-only">Categorie</span>
+            <select
+              aria-label="Categorie"
+              className="field"
+              value={category}
+              onChange={(event) =>
+                setCategory(event.target.value as GroceryCategory | "")
+              }
+            >
+              <option value="">Geen categorie</option>
+              {categories.map((entry) => (
+                <option key={entry.value} value={entry.value}>
+                  {entry.label}
+                </option>
+              ))}
+            </select>
+          </label>
           <div
             className="mt-3 flex flex-wrap gap-2"
             aria-label="Snel toevoegen"
@@ -175,14 +207,33 @@ export function GroceryPanel({
                 >
                   {item.name}
                 </p>
-                {(item.quantity || item.unit || item.shopLabel) && (
+                {(item.quantity ||
+                  item.unit ||
+                  item.shopLabel ||
+                  item.category) && (
                   <p className="text-sm text-muted">
-                    {[item.quantity, item.unit, item.shopLabel]
+                    {[item.quantity, item.unit, item.shopLabel, item.category]
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
                 )}
               </div>
+              {canEdit && (
+                <Button
+                  aria-label={`${item.name} verwijderen`}
+                  className="px-2"
+                  variant="ghost"
+                  onClick={() => {
+                    if (window.confirm(`${item.name} verwijderen?`)) {
+                      void onDelete(item.id).catch(() =>
+                        setError("Dit artikel kon niet worden verwijderd."),
+                      );
+                    }
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              )}
             </li>
           ))}
         </ul>

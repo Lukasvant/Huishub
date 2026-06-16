@@ -24,6 +24,7 @@ describe("GroceryPanel", () => {
         items={[]}
         onAdd={onAdd}
         onCleanup={vi.fn()}
+        onDelete={vi.fn()}
         onToggle={vi.fn()}
       />,
     );
@@ -42,6 +43,7 @@ describe("GroceryPanel", () => {
         items={[item]}
         onAdd={vi.fn()}
         onCleanup={vi.fn()}
+        onDelete={vi.fn()}
         onToggle={onToggle}
       />,
     );
@@ -49,5 +51,30 @@ describe("GroceryPanel", () => {
     await userEvent.click(screen.getByLabelText("Melk gekocht"));
     expect(onToggle).toHaveBeenCalledWith(item);
     expect(screen.getByText("Melk")).toBeInTheDocument();
+  });
+
+  it("voegt een optionele categorie toe en kan een los artikel verwijderen", async () => {
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    const onDelete = vi.fn().mockResolvedValue(undefined);
+    vi.spyOn(window, "confirm").mockReturnValue(true);
+
+    render(
+      <GroceryPanel
+        canEdit
+        items={[item]}
+        onAdd={onAdd}
+        onCleanup={vi.fn()}
+        onDelete={onDelete}
+        onToggle={vi.fn()}
+      />,
+    );
+
+    await userEvent.type(screen.getByLabelText("Boodschap"), "Yoghurt");
+    await userEvent.selectOptions(screen.getByLabelText("Categorie"), "zuivel");
+    await userEvent.click(screen.getByLabelText("Toevoegen"));
+    await userEvent.click(screen.getByLabelText("Melk verwijderen"));
+
+    expect(onAdd).toHaveBeenCalledWith({ name: "Yoghurt", category: "zuivel" });
+    expect(onDelete).toHaveBeenCalledWith("melk");
   });
 });

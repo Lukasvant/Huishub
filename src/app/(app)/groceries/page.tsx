@@ -9,6 +9,7 @@ import { useGroceries } from "@/hooks/use-household-data";
 import {
   cleanBoughtGroceries,
   createGroceryItem,
+  deleteGroceryItem,
   toggleGroceryBought,
 } from "@/lib/firebase/data";
 import { canEdit } from "@/lib/permissions";
@@ -44,6 +45,7 @@ export default function GroceriesPage() {
           onToggle={(item) =>
             toggleGroceryBought(householdId, item.id, item.status !== "bought")
           }
+          onDelete={(itemId) => deleteGroceryItem(householdId, itemId)}
           onCleanup={() => cleanBoughtGroceries(householdId)}
         />
         <div className="space-y-3">
