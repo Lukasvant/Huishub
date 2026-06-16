@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { HiveIllustration } from "@/components/hive-illustration";
 import { Button, Card, LoadingScreen, Message } from "@/components/ui";
 import { useAuth } from "@/contexts/auth-context";
 import { useHousehold } from "@/contexts/household-context";
@@ -39,6 +40,7 @@ export default function CreateHouseholdPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-md items-center px-5">
       <Card className="w-full p-6">
+        <HiveIllustration className="mx-auto mb-3 max-w-[13rem]" />
         <p className="eyebrow">Welkom bij TaskHive</p>
         <h1 className="mt-2 text-4xl leading-none">Maak je huishouden</h1>
         <p className="mt-3 text-sm uppercase tracking-[0.12em] text-muted">

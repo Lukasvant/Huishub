@@ -50,7 +50,26 @@ describe("GroceryPanel", () => {
 
     await userEvent.click(screen.getByLabelText("Melk gekocht"));
     expect(onToggle).toHaveBeenCalledWith(item);
-    expect(screen.getByText("Melk")).toBeInTheDocument();
+    expect(screen.getByLabelText("Melk gekocht")).toBeInTheDocument();
+  });
+
+  it("voegt een product toe via een icoontegel", async () => {
+    const onAdd = vi.fn().mockResolvedValue(undefined);
+    render(
+      <GroceryPanel
+        canEdit
+        items={[]}
+        onAdd={onAdd}
+        onCleanup={vi.fn()}
+        onDelete={vi.fn()}
+        onToggle={vi.fn()}
+      />,
+    );
+
+    await userEvent.click(screen.getByLabelText("Melk snel toevoegen"));
+
+    expect(onAdd).toHaveBeenCalledWith({ name: "Melk", category: "zuivel" });
+    expect(await screen.findByText("Melk toegevoegd.")).toBeVisible();
   });
 
   it("voegt een optionele categorie toe en kan een los artikel verwijderen", async () => {
