@@ -71,6 +71,10 @@ function agendaPath(id: string, household = householdId) {
   return `${householdPath(household)}/agendaItems/${id}`;
 }
 
+function calendarConnectionPath(id: string, household = householdId) {
+  return `${householdPath(household)}/calendarConnections/${id}`;
+}
+
 function invitePath(id: string, household = householdId) {
   return `${householdPath(household)}/invites/${id}`;
 }
@@ -191,6 +195,16 @@ async function seedHouseholds() {
       doc(db, agendaPath("private-agenda")),
       agendaDoc("private-agenda", true),
     );
+    await setDoc(doc(db, calendarConnectionPath(partnerUid)), {
+      householdId,
+      userId: partnerUid,
+      provider: "google",
+      status: "connected",
+      calendarId: "primary",
+      scopes: ["https://www.googleapis.com/auth/calendar.events.freebusy"],
+      connectedAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
     await setDoc(doc(db, invitePath("invite-partner")), {
       householdId,
       email: invitedEmail,
@@ -425,7 +439,11 @@ describe("Firestore security rules", () => {
     );
 
     const admin = authedDb(adminUid, adminEmail);
+    await assertSucceeds(
+      getDocs(collection(admin, `${householdPath()}/calendarConnections`)),
+    );
     const batch = writeBatch(admin);
+    batch.delete(doc(admin, calendarConnectionPath(partnerUid)));
     batch.delete(doc(admin, memberPath(adminUid)));
     batch.delete(doc(admin, memberPath(secondAdminUid)));
     batch.delete(doc(admin, householdPath()));

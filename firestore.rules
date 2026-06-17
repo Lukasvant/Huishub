@@ -171,8 +171,9 @@ service cloud.firestore {
       }
 
       match /calendarConnections/{connectionId} {
-        allow read: if canEdit(householdId) &&
-          resource.data.userId == request.auth.uid;
+        allow read: if isAdmin(householdId) ||
+          (canEdit(householdId) &&
+            resource.data.userId == request.auth.uid);
         allow create, update: if canEdit(householdId) &&
           connectionId == request.auth.uid &&
           request.resource.data.householdId == householdId &&
