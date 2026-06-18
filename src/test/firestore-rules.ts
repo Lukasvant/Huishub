@@ -368,6 +368,30 @@ describe("Firestore security rules", () => {
     );
   });
 
+  it("laat gebruikers alleen hun eigen pushregistraties beheren", async () => {
+    const viewer = authedDb(viewerUid, viewerEmail);
+    const partner = authedDb(partnerUid, partnerEmail);
+    const tokenPath = `users/${viewerUid}/pushTokens/device-token`;
+
+    await assertSucceeds(
+      setDoc(doc(viewer, tokenPath), {
+        token: "fcm-token",
+        userId: viewerUid,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      }),
+    );
+    await assertSucceeds(getDoc(doc(viewer, tokenPath)));
+    await assertFails(getDoc(doc(partner, tokenPath)));
+    await assertFails(
+      setDoc(doc(partner, tokenPath), {
+        token: "gestolen-token",
+        userId: partnerUid,
+      }),
+    );
+    await assertSucceeds(deleteDoc(doc(viewer, tokenPath)));
+  });
+
   it("beperkt ledenbeheer en collectie-groep queries", async () => {
     const admin = authedDb(adminUid, adminEmail);
     const partner = authedDb(partnerUid, partnerEmail);

@@ -127,6 +127,7 @@ export async function deleteTask(
 
 export interface NewGroceryInput extends ParsedGroceryItem {
   category?: GroceryCategory;
+  notifyHousehold?: boolean;
 }
 
 export async function createGroceryItem(
@@ -195,6 +196,7 @@ export interface NewAgendaInput {
   allDay: boolean;
   location?: string;
   private: boolean;
+  source?: "manual" | "photo_ocr";
 }
 
 export async function createAgendaItem(
@@ -213,12 +215,46 @@ export async function createAgendaItem(
         ? { endDateTime: Timestamp.fromDate(input.endDateTime) }
         : {}),
       visibleToViewers: !input.private,
-      source: "manual",
+      source: input.source ?? "manual",
       createdBy: userId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     },
   );
+}
+
+export async function createAgendaItems(
+  householdId: string,
+  userId: string,
+  inputs: NewAgendaInput[],
+): Promise<void> {
+  if (inputs.length === 0) return;
+  const firestore = database();
+  const batch = writeBatch(firestore);
+  const agendaCollection = collection(
+    firestore,
+    "households",
+    householdId,
+    "agendaItems",
+  );
+
+  inputs.forEach((input) => {
+    batch.set(doc(agendaCollection), {
+      ...omitUndefined(input as unknown as Record<string, unknown>),
+      householdId,
+      title: input.title.trim(),
+      startDateTime: Timestamp.fromDate(input.startDateTime),
+      ...(input.endDateTime
+        ? { endDateTime: Timestamp.fromDate(input.endDateTime) }
+        : {}),
+      visibleToViewers: !input.private,
+      source: input.source ?? "manual",
+      createdBy: userId,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+  });
+  await batch.commit();
 }
 
 export async function updateAgendaItem(

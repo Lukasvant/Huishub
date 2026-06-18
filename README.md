@@ -10,13 +10,15 @@ TaskHive is een rustige Nederlandse web-app/PWA voor gedeelde huishoudplanning. 
 - Taken met toewijzing, zichtbaarheid en herhaling: dagelijks, wekelijks, maandelijks, elke X periode, weekdagen en laatste vrijdag van de maand.
 - Snelle gedeelde boodschappenlijst met gekocht-status, opruimen, snelle artikelen en Nederlandse spraakinput met bevestiging.
 - Agenda met lijst/dag/week en privé-items.
+- Foto van een papieren agenda analyseren met Gemini 2.5 Flash-Lite, met een verplichte controle- en bevestigingsstap.
+- Optionele boodschappen-pushmeldingen per toevoeging, alleen naar apparaten die zich hebben aangemeld.
 - PWA-manifest en offline shell.
 
 ## Techniek
 
 - Next.js App Router, TypeScript in strict mode en Tailwind CSS.
 - Firebase Authentication en Cloud Firestore.
-- Statische Next.js-export naar Firebase Hosting, geschikt voor het gratis Spark-plan.
+- Statische Next.js-export naar Firebase Hosting. Agenda-analyse gebruikt Firebase AI Logic; pushverzending gebruikt één Cloud Function.
 - Vitest en Testing Library voor domein- en componenttests.
 
 Supabase, native apps, chatintegraties en locatietriggers maken nadrukkelijk geen deel uit van V1.
@@ -29,7 +31,7 @@ Supabase, native apps, chatintegraties en locatietriggers maken nadrukkelijk gee
    npm install
    ```
 
-2. Maak een Firebase-project aan op het gratis **Spark**-plan. Activeer Authentication providers `Email/Password` en optioneel `Google`, en maak een Firestore-database aan.
+2. Maak een Firebase-project aan. Activeer Authentication providers `Email/Password` en optioneel `Google`, en maak een Firestore-database aan.
 
 3. Kopieer `.env.example` naar `.env.local` en vul de web-appconfiguratie uit Firebase in:
 
@@ -39,6 +41,9 @@ Supabase, native apps, chatintegraties en locatietriggers maken nadrukkelijk gee
    NEXT_PUBLIC_FIREBASE_PROJECT_ID=...
    NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=...
    NEXT_PUBLIC_FIREBASE_APP_ID=...
+   NEXT_PUBLIC_FIREBASE_VAPID_KEY=...
+   NEXT_PUBLIC_FIREBASE_APP_CHECK_SITE_KEY=...
+   NEXT_PUBLIC_GEMINI_MODEL=gemini-2.5-flash-lite
    ```
 
 4. Log in bij de Firebase CLI. De aanwezige `.firebaserc` koppelt dit project al
@@ -62,6 +67,31 @@ Supabase, native apps, chatintegraties en locatietriggers maken nadrukkelijk gee
 
    Open `http://localhost:3000`.
 
+Installeer voor de pushfunctie ook eenmalig de aparte serverdependencies:
+
+```bash
+npm --prefix functions install
+```
+
+## Agenda scannen met Gemini
+
+1. Open in Firebase Console **AI Logic** en kies **Aan de slag**.
+2. Kies de Gemini Developer API en koppel de bestaande web-app.
+3. Laat `NEXT_PUBLIC_GEMINI_MODEL` op `gemini-2.5-flash-lite` staan. Dit is het stabiele lichte model; er wordt geen preview- of `latest`-alias gebruikt.
+4. Maak in Google Cloud een reCAPTCHA Enterprise-websleutel voor `taskhive.nl`, registreer die onder Firebase **App Check**, en vul de sleutel in als `NEXT_PUBLIC_FIREBASE_APP_CHECK_SITE_KEY`. Zet enforcement pas aan nadat je in App Check geldige verzoeken ziet.
+
+De browser verkleint de foto en stuurt hem rechtstreeks via Firebase AI Logic naar Gemini. TaskHive bewaart de foto niet in Firestore of Storage. Gemini geeft alleen voorstellen terug; pas na selectie en bevestiging schrijft de app agenda-items met `source = photo_ocr`.
+
+## Pushmeldingen voor boodschappen
+
+1. Open Firebase Console > **Projectinstellingen** > **Cloud Messaging**.
+2. Genereer onder **Webconfiguratie / Web Push-certificaten** een sleutel en zet de openbare sleutel als `NEXT_PUBLIC_FIREBASE_VAPID_KEY` in de buildomgeving.
+3. Koppel een factureringsaccount en activeer het Blaze-plan; Cloud Functions kan niet vanaf Spark worden gedeployed.
+4. Deploy alles met `npm run deploy:all`, of alleen de functie met `npm run deploy:functions`.
+5. Iedere ontvanger opent **Meer > Huishouden > Pushmeldingen** en kiest **Meldingen aanzetten** op elk gewenst apparaat.
+
+Op iPhone en iPad werkt webpush alleen wanneer TaskHive als web-app op het beginscherm is gezet. De verzender bepaalt met **Stuur een pushmelding** per handmatige, snelle of ingesproken toevoeging of huisgenoten worden gewaarschuwd. De verzender zelf krijgt geen push.
+
 ## Rollen en privacy
 
 | Rol       | Taken, boodschappen en agenda bewerken | Leden beheren | Privé-agenda zien |
@@ -78,6 +108,7 @@ Frontendfilters zorgen voor een rustige UX, maar zijn niet de beveiliging: `fire
 
 ```text
 users/{userId}
+  pushTokens/{deviceTokenHash}
 households/{householdId}
   members/{userId}
   invites/{inviteId}
@@ -107,7 +138,7 @@ De datumprikker kan vrije opties maken met TaskHive-afspraken, Google Freebusy e
 
 ## Hosting en kosten
 
-V1 gebruikt geen Firebase Storage of App Hosting. De app exporteert statisch naar `out/` en kan daardoor met klassieke Firebase Hosting op het gratis Spark-plan draaien. Binnen Spark wordt Hosting bij overschrijding van de gratis quota beperkt in plaats van doorgerekend; er hoeft geen betaalaccount gekoppeld te worden.
+TaskHive gebruikt geen Firebase Storage of App Hosting. De statische site en Firestore kunnen binnen Spark draaien. Firebase AI Logic heeft een beperkte kosteloze laag afhankelijk van de gekozen Gemini-backend en regio. Voor de boodschappen-push is Blaze verplicht vanwege Cloud Functions; FCM zelf rekent geen berichtkosten. Stel in Google Cloud een klein budget en budgetwaarschuwingen in. De functie wordt alleen uitgevoerd wanneer een boodschap met `notifyHousehold = true` wordt aangemaakt.
 
 ## Kwaliteitscontrole
 
@@ -129,9 +160,8 @@ Deze test start de Firestore Emulator en vereist lokaal Java. Zonder Java stopt 
 
 ## Roadmap na V1
 
-- Foto-upload van de papieren agenda met Firebase Storage en OCR-review na menselijke bevestiging.
 - Google Agenda-koppeling met Datumprikker-links voor vrienden en vriendengroepen.
-- Browser pushmeldingen bovenop de huidige in-appmeldingen.
+- Uitgebreidere pushvoorkeuren per huishouden en meldingstype.
 - WhatsApp/Signal verzenden, lezen en boodschappen toevoegen via berichten.
 - Locatieherinneringen nabij winkels, bijvoorbeeld AH.
 - Native Android- en iOS-apps.

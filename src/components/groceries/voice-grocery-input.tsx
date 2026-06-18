@@ -1,6 +1,6 @@
 "use client";
 
-import { Mic, Plus, Trash2 } from "lucide-react";
+import { Bell, Mic, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { Button, Card, Message } from "@/components/ui";
 import { parseDutchGroceryInput } from "@/lib/groceries/parser";
@@ -25,7 +25,10 @@ type RecognitionConstructor = new () => Recognition;
 export function VoiceGroceryInput({
   onConfirm,
 }: {
-  onConfirm: (items: ParsedGroceryItem[]) => Promise<void>;
+  onConfirm: (
+    items: ParsedGroceryItem[],
+    notifyHousehold: boolean,
+  ) => Promise<void>;
 }) {
   const [transcript, setTranscript] = useState("");
   const [items, setItems] = useState<ParsedGroceryItem[]>([]);
@@ -33,6 +36,7 @@ export function VoiceGroceryInput({
   const [reviewing, setReviewing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string>();
+  const [notifyHousehold, setNotifyHousehold] = useState(false);
 
   function parse(text: string) {
     const parsed = parseDutchGroceryInput(text);
@@ -95,7 +99,7 @@ export function VoiceGroceryInput({
     }
     setBusy(true);
     try {
-      await onConfirm(usable);
+      await onConfirm(usable, notifyHousehold);
       setMessage("Toegevoegd aan de boodschappenlijst.");
       setTranscript("");
       setItems([]);
@@ -197,9 +201,21 @@ export function VoiceGroceryInput({
             Regel toevoegen
           </Button>
           {items.length > 0 && (
-            <Button className="w-full" onClick={confirm} disabled={busy}>
-              {busy ? "Toevoegen..." : "Bevestig en voeg toe"}
-            </Button>
+            <>
+              <label className="flex cursor-pointer items-center gap-2 rounded-2xl border border-line px-3 py-2.5 text-sm">
+                <input
+                  checked={notifyHousehold}
+                  className="h-5 w-5 accent-cyan-600"
+                  type="checkbox"
+                  onChange={(event) => setNotifyHousehold(event.target.checked)}
+                />
+                <Bell className="h-4 w-4 text-sage-600" />
+                Stuur een pushmelding naar huisgenoten
+              </label>
+              <Button className="w-full" onClick={confirm} disabled={busy}>
+                {busy ? "Toevoegen..." : "Bevestig en voeg toe"}
+              </Button>
+            </>
           )}
         </div>
       )}

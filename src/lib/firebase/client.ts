@@ -1,6 +1,10 @@
 "use client";
 
 import { getApp, getApps, initializeApp } from "firebase/app";
+import {
+  ReCaptchaEnterpriseProvider,
+  initializeAppCheck,
+} from "firebase/app-check";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
@@ -15,11 +19,20 @@ const firebaseConfig = {
 export const isFirebaseConfigured =
   Object.values(firebaseConfig).every(Boolean);
 
-const app = isFirebaseConfigured
+export const firebaseApp = isFirebaseConfigured
   ? getApps().length
     ? getApp()
     : initializeApp(firebaseConfig)
   : undefined;
 
-export const auth = app ? getAuth(app) : undefined;
-export const db = app ? getFirestore(app) : undefined;
+export const auth = firebaseApp ? getAuth(firebaseApp) : undefined;
+export const db = firebaseApp ? getFirestore(firebaseApp) : undefined;
+
+const appCheckSiteKey = process.env.NEXT_PUBLIC_FIREBASE_APP_CHECK_SITE_KEY;
+
+if (firebaseApp && appCheckSiteKey && typeof window !== "undefined") {
+  initializeAppCheck(firebaseApp, {
+    provider: new ReCaptchaEnterpriseProvider(appCheckSiteKey),
+    isTokenAutoRefreshEnabled: true,
+  });
+}

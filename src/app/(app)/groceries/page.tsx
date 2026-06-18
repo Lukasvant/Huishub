@@ -23,9 +23,18 @@ export default function GroceriesPage() {
   const householdId = household?.id ?? "";
   const userId = user?.uid ?? "";
 
-  async function addParsedItems(parsedItems: ParsedGroceryItem[]) {
+  async function addParsedItems(
+    parsedItems: ParsedGroceryItem[],
+    notifyHousehold: boolean,
+  ) {
     await Promise.all(
-      parsedItems.map((item) => createGroceryItem(householdId, userId, item)),
+      parsedItems.map((item, index) =>
+        createGroceryItem(householdId, userId, {
+          ...item,
+          // Eén gesproken lijst geeft hooguit één push, niet één per artikel.
+          ...(notifyHousehold && index === 0 ? { notifyHousehold: true } : {}),
+        }),
+      ),
     );
   }
 

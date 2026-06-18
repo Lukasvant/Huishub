@@ -88,6 +88,7 @@ export interface GroceryItem {
   createdAt: StoredDate;
   updatedAt: StoredDate;
   boughtAt?: StoredDate;
+  notifyHousehold?: boolean;
 }
 
 export interface ParsedGroceryItem {
@@ -110,7 +111,7 @@ export interface AgendaItem {
   private: boolean;
   visibleToViewers: boolean;
   createdBy: string;
-  source: "manual";
+  source: "manual" | "photo_ocr";
   createdAt: StoredDate;
   updatedAt: StoredDate;
 }

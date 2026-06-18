@@ -20,6 +20,7 @@ import {
 } from "react";
 import { auth, isFirebaseConfigured } from "@/lib/firebase/client";
 import { saveUserProfile } from "@/lib/firebase/households";
+import { disablePushNotifications } from "@/lib/firebase/messaging";
 
 interface AuthContextValue {
   user: User | null;
@@ -105,6 +106,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       },
       logout: async () => {
+        const currentUser = getAuthInstance().currentUser;
+        if (currentUser) {
+          await disablePushNotifications(currentUser.uid).catch(
+            () => undefined,
+          );
+        }
         await signOut(getAuthInstance());
       },
     }),

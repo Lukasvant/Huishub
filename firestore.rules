@@ -84,6 +84,13 @@ service cloud.firestore {
     match /users/{userId} {
       allow read, create, update: if signedIn() && userId == request.auth.uid;
       allow delete: if false;
+
+      match /pushTokens/{tokenId} {
+        allow read, create, update: if signedIn() &&
+          userId == request.auth.uid &&
+          request.resource.data.userId == request.auth.uid;
+        allow delete: if signedIn() && userId == request.auth.uid;
+      }
     }
 
     match /households/{householdId} {

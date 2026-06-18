@@ -4,6 +4,7 @@ import Link from "next/link";
 import { LogOut, ShieldCheck, Trash2, Users } from "lucide-react";
 import { useState, type FormEvent } from "react";
 import { Button, Card, Message, PageHeader } from "@/components/ui";
+import { PushNotificationSettings } from "@/components/push-notification-settings";
 import { useAuth } from "@/contexts/auth-context";
 import { useHousehold } from "@/contexts/household-context";
 import {
@@ -123,6 +124,7 @@ export default function HouseholdSettingsPage() {
     <>
       <PageHeader title="Instellingen" description="Huishouden en toegang." />
       <div className="grid max-w-2xl gap-4">
+        {user && <PushNotificationSettings userId={user.uid} />}
         <Card>
           <h2 className="font-semibold">Huishouden</h2>
           {admin ? (

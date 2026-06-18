@@ -5,6 +5,7 @@ import {
   Baby,
   Banana,
   Beef,
+  Bell,
   Check,
   Coffee,
   Croissant,
@@ -117,6 +118,7 @@ export function GroceryPanel({
   const [quantity, setQuantity] = useState("");
   const [shopLabel, setShopLabel] = useState("");
   const [category, setCategory] = useState<GroceryCategory | "">("");
+  const [notifyHousehold, setNotifyHousehold] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
   const [notice, setNotice] = useState<string>();
@@ -166,6 +168,7 @@ export function GroceryPanel({
           ...(template.unit ? { unit: template.unit } : {}),
           ...(template.shopLabel ? { shopLabel: template.shopLabel } : {}),
           ...(template.category ? { category: template.category } : {}),
+          ...(notifyHousehold ? { notifyHousehold: true } : {}),
         });
         setNotice(`${template.name} toegevoegd.`);
       }
@@ -194,6 +197,7 @@ export function GroceryPanel({
       ...(quantity.trim() ? { quantity: quantity.trim() } : {}),
       ...(shopLabel.trim() ? { shopLabel: shopLabel.trim() } : {}),
       ...(category ? { category } : {}),
+      ...(notifyHousehold ? { notifyHousehold: true } : {}),
     });
     if (added) {
       setName("");
@@ -252,6 +256,21 @@ export function GroceryPanel({
                 </option>
               ))}
             </select>
+          </label>
+          <label className="mt-3 flex cursor-pointer items-center gap-3 rounded-2xl border border-line bg-canvas px-3 py-2.5 text-sm">
+            <input
+              checked={notifyHousehold}
+              className="h-5 w-5 accent-cyan-600"
+              type="checkbox"
+              onChange={(event) => setNotifyHousehold(event.target.checked)}
+            />
+            <Bell className="h-4 w-4 text-sage-600" />
+            <span>
+              <span className="block font-medium">Stuur een pushmelding</span>
+              <span className="block text-xs text-muted">
+                Alleen naar huisgenoten die meldingen hebben aangezet.
+              </span>
+            </span>
           </label>
           <div
             aria-label="Snel toevoegen"

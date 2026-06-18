@@ -1,8 +1,10 @@
 "use client";
 
+import Link from "next/link";
+import { Camera } from "lucide-react";
 import { AgendaPanel } from "@/components/agenda/agenda-panel";
 import { DatePollPanel } from "@/components/agenda/date-poll-panel";
-import { LoadingScreen, Message, PageHeader } from "@/components/ui";
+import { Button, LoadingScreen, Message, PageHeader } from "@/components/ui";
 import { useAuth } from "@/contexts/auth-context";
 import { useHousehold } from "@/contexts/household-context";
 import { useAgendaItems } from "@/hooks/use-household-data";
@@ -27,6 +29,15 @@ export default function AgendaPage() {
       <PageHeader
         title="Agenda"
         description="De papieren agenda blijft leidend; hier maak je hem vindbaar."
+        action={
+          editable ? (
+            <Link href="/agenda/upload-photo">
+              <Button variant="secondary">
+                <Camera className="h-4 w-4" /> Scan foto
+              </Button>
+            </Link>
+          ) : undefined
+        }
       />
       {error && <Message>{error}</Message>}
       <div className="mb-5">

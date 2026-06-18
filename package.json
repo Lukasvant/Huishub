@@ -6,6 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "deploy": "npm run build && npx firebase-tools deploy --only firestore:rules,firestore:indexes,hosting",
+    "deploy:functions": "npx firebase-tools deploy --only functions",
+    "deploy:all": "npm run build && npx firebase-tools deploy --only firestore:rules,firestore:indexes,functions,hosting",
     "start": "next start",
     "lint": "eslint .",
     "format": "prettier --write .",

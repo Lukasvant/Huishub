@@ -2,6 +2,7 @@
 
 import {
   CalendarPlus,
+  Camera,
   Check,
   CheckSquare,
   Mic,
@@ -101,7 +102,7 @@ export default function DashboardPage() {
       />
       {error && <Message>{error}</Message>}
       {editable && (
-        <section className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <section className="mb-6 grid grid-cols-2 gap-2 sm:grid-cols-5">
           {[
             { href: "/tasks#nieuw", label: "Taak", icon: CheckSquare },
             {
@@ -111,6 +112,11 @@ export default function DashboardPage() {
             },
             { href: "/groceries#spraak", label: "Inspreken", icon: Mic },
             { href: "/agenda#nieuw", label: "Afspraak", icon: CalendarPlus },
+            {
+              href: "/agenda/upload-photo",
+              label: "Scan agenda",
+              icon: Camera,
+            },
           ].map(({ href, label, icon: Icon }) => (
             <Link href={href} key={label}>
               <Button className="w-full flex-col py-3" variant="secondary">
