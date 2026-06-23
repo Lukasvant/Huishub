@@ -12,6 +12,7 @@ import {
 import { isAfter, isSameDay, startOfDay } from "date-fns";
 import Link from "next/link";
 import { useState } from "react";
+import { WeatherTimeCard } from "@/components/dashboard/weather-time-card";
 import {
   Button,
   Card,
@@ -128,6 +129,7 @@ export default function DashboardPage() {
         </section>
       )}
       <div className="grid gap-4 lg:grid-cols-3">
+        <WeatherTimeCard />
         <Card className="lg:col-span-2">
           <h2 className="mb-3 font-semibold">Vandaag</h2>
           {today.length === 0 ? (

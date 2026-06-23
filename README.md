@@ -6,7 +6,8 @@ TaskHive is een rustige Nederlandse web-app/PWA voor gedeelde huishoudplanning. 
 
 - Firebase Authentication met e-mail/wachtwoord en Google-login.
 - Huishouden aanmaken en leden uitnodigen als `partner` of `viewer`.
-- Dashboard met vandaag, komende agenda, open taken, boodschappen en in-appmeldingen.
+- Dashboard met vandaag, lokale tijd, weer, komende agenda, open taken,
+  boodschappen en in-appmeldingen.
 - Taken met toewijzing, zichtbaarheid en herhaling: dagelijks, wekelijks, maandelijks, elke X periode, weekdagen en laatste vrijdag van de maand.
 - Snelle gedeelde boodschappenlijst met gekocht-status, opruimen, snelle artikelen en Nederlandse spraakinput met bevestiging.
 - Agenda met lijst/dag/week en privé-items.
@@ -44,7 +45,14 @@ Supabase, native apps, chatintegraties en locatietriggers maken nadrukkelijk gee
    NEXT_PUBLIC_FIREBASE_VAPID_KEY=...
    NEXT_PUBLIC_FIREBASE_APP_CHECK_SITE_KEY=...
    NEXT_PUBLIC_GEMINI_MODEL=gemini-2.5-flash-lite
+   NEXT_PUBLIC_DEFAULT_WEATHER_LABEL=Amsterdam
+   NEXT_PUBLIC_DEFAULT_WEATHER_LAT=52.3676
+   NEXT_PUBLIC_DEFAULT_WEATHER_LON=4.9041
    ```
+
+   De weerkaart op het dashboard gebruikt Open-Meteo zonder API-key. Vul hier je
+   eigen woonplaats en coordinaten in als je niet de standaardlocatie Amsterdam
+   wilt gebruiken.
 
 4. Log in bij de Firebase CLI. De aanwezige `.firebaserc` koppelt dit project al
    aan het bestaande Firebase-project `huishub-930f2`:
@@ -139,6 +147,11 @@ De datumprikker kan vrije opties maken met TaskHive-afspraken, Google Freebusy e
 ## Hosting en kosten
 
 TaskHive gebruikt geen Firebase Storage of App Hosting. De statische site en Firestore kunnen binnen Spark draaien. Firebase AI Logic heeft een beperkte kosteloze laag afhankelijk van de gekozen Gemini-backend en regio. Voor de boodschappen-push is Blaze verplicht vanwege Cloud Functions; FCM zelf rekent geen berichtkosten. Stel in Google Cloud een klein budget en budgetwaarschuwingen in. De functie wordt alleen uitgevoerd wanneer een boodschap met `notifyHousehold = true` wordt aangemaakt.
+
+Het dashboardweer gebruikt de open-access API van Open-Meteo. Die is geschikt
+voor evaluatie en prototyping en heeft gratis limieten; voor commercieel gebruik
+of hogere betrouwbaarheid is een betaald Open-Meteo-plan nodig. TaskHive toont
+attributie via de link onder de weerkaart.
 
 ## Kwaliteitscontrole
 
